@@ -26,7 +26,7 @@ const GeoAnalysisForm: React.FC<GeoFormProps> = ({
   remainingRequests,
   requestLimit,
 }) => {
-  const hasRemainingRequests = remainingRequests === null || remainingRequests > 0;
+  const hasRemainingRequests = remainingRequests == null || (typeof remainingRequests === 'number' && remainingRequests > 0);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAnalyze();
