@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { GoogleGenAI } from "@google/genai";
 import { GeoAnalysisResult } from "@/types/types";
+import { checkRateLimit, getRateLimitInfo } from "@/lib/rateLimiter";
 
 //Please change the prompt based on your preferences
 
@@ -100,10 +101,22 @@ const getChatGptGeoAnalysis = async (query: string, keywords: string, url: strin
 
 export default async function handler(
 req: NextApiRequest,
-res: NextApiResponse<GeoAnalysisResult | {error: string}>
+res: NextApiResponse<GeoAnalysisResult | {error: string; remaining?: number; resetAt?: number; limit?: number}>
 ) {
     if(req.method !== 'POST'){
         return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    // Check rate limit
+    const rateLimit = checkRateLimit(req);
+    
+    if (!rateLimit.allowed) {
+        return res.status(429).json({
+            error: `Rate limit exceeded. You have used all ${rateLimit.limit} requests for today. Please try again tomorrow.`,
+            remaining: rateLimit.remaining,
+            resetAt: rateLimit.resetAt,
+            limit: rateLimit.limit,
+        });
     }
 
     const {query, keywords, url} = req.body;
@@ -123,7 +136,15 @@ res: NextApiResponse<GeoAnalysisResult | {error: string}>
             chatgpt: chatgptResult.status === 'fulfilled'? chatgptResult.value: `### Analysis Failed 😭\n\n**Reason:** ${(chatgptResult.reason as Error).message}`,
         };
 
-        res.status(200).json(analysisResult);
+        // Get updated rate limit info (without incrementing)
+        const rateLimitInfo = getRateLimitInfo(req);
+        
+        res.status(200).json({
+            ...analysisResult,
+            remaining: rateLimitInfo.remaining,
+            resetAt: rateLimitInfo.resetAt,
+            limit: rateLimitInfo.limit,
+        } as GeoAnalysisResult & { remaining: number; resetAt: number; limit: number });
     }
     catch(error){
         console.error("Error in Analyzer", error);

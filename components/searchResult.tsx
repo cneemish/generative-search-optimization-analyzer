@@ -1,7 +1,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { SparklesIcon } from "./icons";
+import { SparklesIcon, RefreshIcon } from "./icons";
 import { GeoAnalysisResult } from "@/types/types";
 
 const markdownComponents = {
@@ -52,8 +52,14 @@ const markdownComponents = {
   ),
 };
 
-const ComparisonResultDisplay: React.FC<{ result: GeoAnalysisResult }> = ({
+interface ComparisonResultDisplayProps {
+  result: GeoAnalysisResult;
+  onRefresh?: () => void;
+}
+
+const ComparisonResultDisplay: React.FC<ComparisonResultDisplayProps> = ({
   result,
+  onRefresh,
 }) => {
   const renderCard = (title: string, content: string, borderColor: string) => (
     <div
@@ -72,13 +78,52 @@ const ComparisonResultDisplay: React.FC<{ result: GeoAnalysisResult }> = ({
     </div>
   );
 
+  const formatResetTime = (resetAt?: number) => {
+    if (!resetAt) return "";
+    const resetDate = new Date(resetAt);
+    const now = new Date();
+    const diffMs = resetDate.getTime() - now.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffHours > 0) {
+      return `in ${diffHours} hour${diffHours > 1 ? 's' : ''} ${diffMinutes > 0 ? `and ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}` : ''}`;
+    }
+    return `in ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+  };
+
   return (
     <div className="animate-[fadeIn_0.5s_ease-in-out]">
-      <div className="flex items-center gap-3 mb-6">
-        <SparklesIcon className="h-8 w-8 text-primary" />
-        <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">
-          GEO &amp; SEO Analysis
-        </h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <SparklesIcon className="h-8 w-8 text-primary" />
+          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">
+            GEO &amp; SEO Analysis
+          </h2>
+        </div>
+        <div className="flex items-center gap-4">
+          {result.remaining !== undefined && result.limit !== undefined && (
+            <div className="text-sm text-slate-400">
+              <span className="font-semibold text-primary">{result.remaining}</span>
+              <span className="text-slate-500"> / {result.limit} requests remaining</span>
+              {result.resetAt && (
+                <span className="text-slate-500 text-xs block mt-1">
+                  Resets {formatResetTime(result.resetAt)}
+                </span>
+              )}
+            </div>
+          )}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-indigo-500 text-white rounded-lg transition-colors duration-300 text-sm font-medium"
+              title="Start a new analysis"
+            >
+              <RefreshIcon className="h-4 w-4" />
+              <span>New Analysis</span>
+            </button>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {renderCard("Gemini Analysis", result.gemini, "border-primary/50")}

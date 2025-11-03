@@ -10,6 +10,8 @@ interface GeoFormProps {
   setUrl: (url: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
+  remainingRequests?: number | null;
+  requestLimit?: number | null;
 }
 
 const GeoAnalysisForm: React.FC<GeoFormProps> = ({
@@ -21,7 +23,10 @@ const GeoAnalysisForm: React.FC<GeoFormProps> = ({
   setUrl,
   onAnalyze,
   isLoading,
+  remainingRequests,
+  requestLimit,
 }) => {
+  const hasRemainingRequests = remainingRequests === null || remainingRequests > 0;
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAnalyze();
@@ -91,14 +96,24 @@ const GeoAnalysisForm: React.FC<GeoFormProps> = ({
           />
         </div>
       </div>
+      {remainingRequests !== null && requestLimit !== null && (
+        <div className="text-sm text-slate-400 text-center">
+          <span className="font-semibold text-primary">{remainingRequests}</span>
+          <span className="text-slate-500"> / {requestLimit} requests remaining today</span>
+        </div>
+      )}
       <div className="relative">
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || !hasRemainingRequests}
           className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-indigo-500 disabled:bg-indigo-800/60 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-300 mt-2 text-lg group"
         >
           <SearchIcon className="h-5 w-5" />
-          <span>Analyze GEO & SEO</span>
+          <span>
+            {!hasRemainingRequests 
+              ? `Daily limit reached (${requestLimit || 3} requests)` 
+              : "Analyze GEO & SEO"}
+          </span>
         </button>
       </div>
     </form>

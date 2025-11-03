@@ -16,6 +16,8 @@ const HomePage: React.FC = () => {
     useState<GeoAnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [remainingRequests, setRemainingRequests] = useState<number | null>(null);
+  const [requestLimit, setRequestLimit] = useState<number | null>(null);
 
   const handleAnalysis = useCallback(async () => {
     if (!query.trim() || !keywords.trim() || !url.trim()) {
@@ -35,6 +37,11 @@ const HomePage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // Handle rate limit error
+        if (response.status === 429 && errorData.remaining !== undefined) {
+          setRemainingRequests(errorData.remaining);
+          setRequestLimit(errorData.limit || null);
+        }
         throw new Error(
           errorData.error || `Request failed with status ${response.status}`
         );
@@ -42,6 +49,8 @@ const HomePage: React.FC = () => {
 
       const result: GeoAnalysisResult = await response.json();
       setAnalysisResult(result);
+      setRemainingRequests(result.remaining ?? null);
+      setRequestLimit(result.limit ?? null);
     } catch (err) {
       const errorMessage =
         err instanceof Error
@@ -53,6 +62,14 @@ const HomePage: React.FC = () => {
       setIsLoading(false);
     }
   }, [query, keywords, url]);
+
+  const handleRefresh = useCallback(() => {
+    setAnalysisResult(null);
+    setError(null);
+    setQuery("");
+    setKeywords("");
+    setUrl("");
+  }, []);
 
   return (
     <>
@@ -83,13 +100,18 @@ const HomePage: React.FC = () => {
               setUrl={setUrl}
               onAnalyze={handleAnalysis}
               isLoading={isLoading}
+              remainingRequests={remainingRequests}
+              requestLimit={requestLimit}
             />
 
             <div className="mt-2 min-h-[400px]">
               {isLoading && <LoadingSpinner />}
               {error && <ErrorMessage message={error} />}
               {analysisResult && (
-                <ComparisonResultDisplay result={analysisResult} />
+                <ComparisonResultDisplay 
+                  result={analysisResult} 
+                  onRefresh={handleRefresh}
+                />
               )}
               {!isLoading && !error && !analysisResult && (
                 <div className="text-center text-slate-500 pt-16">
