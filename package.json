@@ -1,7 +1,9 @@
 {
   "name": "generative-search-optimization-analyzer",
   "version": "0.1.0",
-  "private": true,
+  "description": "A Next.js application that performs GEO & SEO analysis using Gemini and OpenAI APIs",
+  "license": "MIT",
+  "private": false,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
