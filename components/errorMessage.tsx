@@ -14,7 +14,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
     >
       <AlertTriangleIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
       <div>
-        <strong className="font-bold">Error;</strong>
+        <strong className="font-bold">Error: </strong>
         <span className="block sm:inline">{message}</span>
       </div>
     </div>

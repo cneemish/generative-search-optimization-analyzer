@@ -1,6 +1,5 @@
 import React from "react";
 import { SearchIcon, LinkIcon } from "./icons";
-import e from "express";
 
 interface GeoFormProps {
   query: string;

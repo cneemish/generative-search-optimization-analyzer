@@ -1,8 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { GoogleGenAI } from "@google/genai";
 import { GeoAnalysisResult } from "@/types/types";
-import { query } from "express";
-import { error } from "console";
 
 //Please change the prompt based on your preferences
 
@@ -58,7 +56,7 @@ const getGeminiGeoAnalysis = async (query: string,keywords: string, url: string 
         contents: userPrompt,
         config: {systemInstruction}
     });
-    return response.text;
+    return response.text || "No response generated from Gemini";
 
 };
 
@@ -67,7 +65,7 @@ const getChatGptGeoAnalysis = async (query: string, keywords: string, url: strin
     if(!openAiApiKey){
         throw new Error("Open API key not found, Please add the key in the .env file");
     }
-    const systemPromt = createSystemPrompt(
+    const systemPrompt = createSystemPrompt(
         "ChatGPT",
         "Offer a conversational, easy-to-understand analysis. Use bullet points and checklists. Explain complex SEO/GEO concepts simply. The tone should be encouraging and user-friendly."
     );
@@ -82,11 +80,11 @@ const getChatGptGeoAnalysis = async (query: string, keywords: string, url: strin
         },
         body: JSON.stringify({
             model: 'gpt-4o',
-            message: [
-                {role: 'system', content: systemPromt},
+            messages: [
+                {role: 'system', content: systemPrompt},
                 {role: 'user', content: userPrompt},
             ],
-            temperature: 0.7, // ontrols the AI's "creativity"
+            temperature: 0.7, // Controls the AI's "creativity"
         }),
     });
 
@@ -102,7 +100,7 @@ const getChatGptGeoAnalysis = async (query: string, keywords: string, url: strin
 
 export default async function handler(
 req: NextApiRequest,
-res: NextApiResponse <GeoAnalysisResult | {error: string}>
+res: NextApiResponse<GeoAnalysisResult | {error: string}>
 ) {
     if(req.method !== 'POST'){
         return res.status(405).json({ error: 'Method Not Allowed' });
